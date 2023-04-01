@@ -73,15 +73,14 @@ def _create_categorical_slot_to_value_map(
 def _create_intent_map(input_str: str) -> Dict[str, str]:
   """Creates mappings from letters to intent names."""
   intent_str = input_str.split('[intent]')[1].split('[context]')[0].strip()
-  intent_option_to_value = {}
   if _SDT_CAT_SLOT_IDENTIFIER not in intent_str:
-    raise ValueError('Improperly formatted intent prompt: %s' % intent_str)
+    raise ValueError(f'Improperly formatted intent prompt: {intent_str}')
   intent_str = intent_str.split(_SDT_CAT_SLOT_IDENTIFIER)[1].strip()
-  for option, option_value in re.findall(r'([a-z])\) (.*?)(?=[a-z]\)|$)',
-                                         intent_str):
-    intent_option_to_value[option] = option_value.strip()
-
-  return intent_option_to_value
+  return {
+      option: option_value.strip()
+      for option, option_value in re.findall(r'([a-z])\) (.*?)(?=[a-z]\)|$)',
+                                             intent_str)
+  }
 
 
 def _normalize_value_prediction(
@@ -146,10 +145,8 @@ def populate_json_predictions(
   slot_preds = preds.split('[state]')[1].split('[intent]')[0].strip()
   for slot_name, value in re.findall(
       rf'(\w+){_DELIMITER.value}(.*?)(?=\w+{_DELIMITER.value}|$)', slot_preds):
-    value = _normalize_value_prediction(slot_name, value,
-                                        slot_to_option_to_value)
-
-    if value:
+    if value := _normalize_value_prediction(slot_name, value,
+                                            slot_to_option_to_value):
       frame['state']['slot_values'][slot_name] = [value]
 
   # Populate intent prediction.

@@ -62,9 +62,7 @@ def get_action_template(action, intent):
   elif action["slot"]:
     # Add the slot to the template key.
     parts.append(action["slot"])
-    # Add placeholder for values. For boolean slots, add the actual value.
-    slot_values = action["values"]
-    if slot_values:
+    if slot_values := action["values"]:
       # Check for True, False and dontcare values.
       if slot_values[0] in ["True", "False", "dontcare"]:
         if len(slot_values) != 1:
@@ -89,9 +87,9 @@ class TemplateUtteranceGenerator:
 
   def _load_templates_for_service(self, service):
     """Load utterance templates for a service from the tsv file."""
-    tsv_path = os.path.join(self._template_dir, "{}.tsv".format(service))
+    tsv_path = os.path.join(self._template_dir, f"{service}.tsv")
     if not os.path.exists(tsv_path):
-      raise ValueError("Templates not defined for service: {}.".format(service))
+      raise ValueError(f"Templates not defined for service: {service}.")
     act_key_to_template = {}
     with open(tsv_path) as f:
       for line in f:
@@ -99,8 +97,8 @@ class TemplateUtteranceGenerator:
         # Verify that the act_key and template_str are consistent.
         if act_key.count(VALUE_CHAR) != template_str.count(VALUE_CHAR):
           raise ValueError(
-              "Template not consistent. act_key: {} template: {}".format(
-                  act_key, template_str))
+              f"Template not consistent. act_key: {act_key} template: {template_str}"
+          )
         act_key_to_template[act_key] = template_str
     self._templates_for_service[service] = act_key_to_template
 
@@ -132,25 +130,22 @@ class TemplateUtteranceGenerator:
     value_idx = 0
     offset = 0
     for idx, char in enumerate(template):
-      if char == VALUE_CHAR:
-        if self._use_canonical_values:
-          value = action["canonical_values"][value_idx]
-        else:
-          value = action["values"][value_idx]
-        if schema:
-          matched_slot = None
-          for slot in schema["slots"]:
-            if slot["name"] == action["slot"]:
-              matched_slot = slot
-          is_categorical = matched_slot[
-              "is_categorical"] if matched_slot else True
-          replacement = value if is_categorical else f"<{action['slot']}>"
-        else:
-          replacement = value
-        value_idx += 1
-      else:
+      if char != VALUE_CHAR:
         continue
 
+      value = (action["canonical_values"][value_idx]
+               if self._use_canonical_values else action["values"][value_idx])
+      if schema:
+        matched_slot = None
+        for slot in schema["slots"]:
+          if slot["name"] == action["slot"]:
+            matched_slot = slot
+        is_categorical = matched_slot[
+            "is_categorical"] if matched_slot else True
+        replacement = value if is_categorical else f"<{action['slot']}>"
+      else:
+        replacement = value
+      value_idx += 1
       char_ind = idx + offset
       template = template[:char_ind] + replacement + template[char_ind + 1:]
       offset += len(replacement) - 1

@@ -36,7 +36,6 @@ class AbstractDST:
       summary: The summary object corresponding to the service.
     """
     del partial_dialog, summary  # Unused.
-    pass
 
   def get_transfer_candidates(
       self, partial_dialog: dialog_pb2.Dialog,

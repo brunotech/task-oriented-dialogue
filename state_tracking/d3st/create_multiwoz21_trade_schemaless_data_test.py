@@ -338,13 +338,17 @@ class CreateMultiwozSchemalessDataTest(tf.test.TestCase):
             is_categorical=True, possible_values=['leicester', 'cambridge']))
 
     examples = create_multiwoz21_trade_schemaless_data.create_schemaless_data(
-        multiwoz_data.train_json, schema_info, multiwoz_data.slot_descriptions,
+        multiwoz_data.train_json,
+        schema_info,
+        multiwoz_data.slot_descriptions,
         create_multiwoz21_trade_schemaless_data.Options(
             description_type='full_desc_with_domain',
             delimiter=':',
             multiple_choice='none',
             use_active_domains_only=False,
-            blocked_domains=set(['hotel'])))
+            blocked_domains={'hotel'},
+        ),
+    )
 
     self.assertLen(examples, 4)
     self.assertEqual(
@@ -390,13 +394,17 @@ class CreateMultiwozSchemalessDataTest(tf.test.TestCase):
             is_categorical=True, possible_values=['leicester', 'cambridge']))
 
     examples = create_multiwoz21_trade_schemaless_data.create_schemaless_data(
-        multiwoz_data.train_json, schema_info, multiwoz_data.slot_descriptions,
+        multiwoz_data.train_json,
+        schema_info,
+        multiwoz_data.slot_descriptions,
         create_multiwoz21_trade_schemaless_data.Options(
             description_type='full_desc_with_domain',
             delimiter=':',
             multiple_choice='none',
             use_active_domains_only=False,
-            blocked_domains=set(['hotel', 'train'])))
+            blocked_domains={'hotel', 'train'},
+        ),
+    )
 
     self.assertEmpty(examples)
 

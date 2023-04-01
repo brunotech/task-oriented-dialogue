@@ -116,7 +116,7 @@ class CreateMultiwozShowDontTellDataTest(tf.test.TestCase,
     ref_output = os.path.join(self._testdata_dir, 'show_dont_tell',
                               ref_output_filename)
 
-    is_trade = True if multiwoz_version == '2.1' else False
+    is_trade = multiwoz_version == '2.1'
     multiwoz_data = multiwoz_utils.load_data(self._temp_dir, multiwoz_version,
                                              is_trade)
     examples = create_multiwoz_sdt_data.create_sdt_examples(

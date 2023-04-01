@@ -464,7 +464,8 @@ class CreateMultiwozSchemalessDataTest(tf.test.TestCase):
     schema_info = multiwoz_utils.load_schema(self._schema_file)
 
     examples = create_multiwoz_schemaless_data.create_schemaless_data(
-        multiwoz_data.train_dialogs, schema_info,
+        multiwoz_data.train_dialogs,
+        schema_info,
         multiwoz_data.slot_descriptions,
         create_multiwoz_schemaless_data.Options(
             multiwoz_version='2.4',
@@ -472,8 +473,10 @@ class CreateMultiwozSchemalessDataTest(tf.test.TestCase):
             delimiter=':',
             multiple_choice='none',
             use_active_domains_only=False,
-            blocked_domains=set(['hotel']),
-            use_target_separators=False))
+            blocked_domains={'hotel'},
+            use_target_separators=False,
+        ),
+    )
 
 
     self.assertLen(examples, 4)
@@ -523,7 +526,8 @@ class CreateMultiwozSchemalessDataTest(tf.test.TestCase):
     schema_info = multiwoz_utils.load_schema(self._schema_file)
 
     examples = create_multiwoz_schemaless_data.create_schemaless_data(
-        multiwoz_data.train_dialogs, schema_info,
+        multiwoz_data.train_dialogs,
+        schema_info,
         multiwoz_data.slot_descriptions,
         create_multiwoz_schemaless_data.Options(
             multiwoz_version='2.4',
@@ -531,8 +535,10 @@ class CreateMultiwozSchemalessDataTest(tf.test.TestCase):
             delimiter=':',
             multiple_choice='none',
             use_active_domains_only=False,
-            blocked_domains=set(['hotel', 'train']),
-            use_target_separators=False))
+            blocked_domains={'hotel', 'train'},
+            use_target_separators=False,
+        ),
+    )
 
 
     self.assertEmpty(examples)

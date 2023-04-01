@@ -68,13 +68,11 @@ def calculate_ser(data, permissible_slots):
   df['is_wrong'] = df.apply(
       lambda x: not example_ser(x['mr'], x['prediction'], permissible_slots),
       axis=1)
-  results = {}
-  results['overall'] = df['is_wrong'].mean()
+  results = {'overall': df['is_wrong'].mean()}
   df_ser = df.groupby('tag').apply(lambda x: x['is_wrong'].mean()).reset_index(
       name='ser')
-  results.update(dict(df_ser.values))
-  results = {k: v * 100 for k, v in results.items()}
-  return results
+  results |= dict(df_ser.values)
+  return {k: v * 100 for k, v in results.items()}
 
 
 def prepare_data(inputs_path, predictions_path):

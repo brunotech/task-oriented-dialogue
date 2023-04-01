@@ -124,9 +124,9 @@ def create_schemaless_data(dialogs_by_id: Dict[str,
       return letter
 
   def _process_one_turn(
-      dialog_id: str, turn: int, belief_state: Dict[str, str], history_str: str,
-      active_domains: Set[str],
-      slot_descriptions: Dict[str, List[str]]) -> TextToTextExample:
+        dialog_id: str, turn: int, belief_state: Dict[str, str], history_str: str,
+        active_domains: Set[str],
+        slot_descriptions: Dict[str, List[str]]) -> TextToTextExample:
     """Creates a `TextToTextExample` from a turn in the dialogue."""
     # Generate a random mapping from slot name to index.
     # slot_names[i] will translate to "i:slot_names[i]".
@@ -217,7 +217,7 @@ def create_schemaless_data(dialogs_by_id: Dict[str,
 
     prefix_str = ' '.join(prefix_pieces)
     state_separator = ' ; ' if options.use_target_separators else ' '
-    state_str = '[states] ' + state_separator.join(state_pieces)
+    state_str = f'[states] {state_separator.join(state_pieces)}'
 
     return TextToTextExample(
         src=f'{prefix_str} {history_str.strip()}'.strip(),

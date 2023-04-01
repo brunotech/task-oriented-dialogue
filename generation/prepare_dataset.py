@@ -84,11 +84,10 @@ class Preprocessor:
 
   def preprocess_schemas(self, schemas_path):
     schemas = json.load(tf.io.gfile.GFile(schemas_path))
-    schemas_str_repr = {
+    return {
         schema["service_name"]: self.preprocess_schema(schema)
         for schema in schemas
     }
-    return schemas_str_repr
 
   def get_domain_from_service(self, service):
     return service.split("_")[0]
@@ -104,8 +103,7 @@ class Preprocessor:
       slot_str = self.preprocess_slot(slot)
       schema_str_parts.append(slot_str)
       self.slots_str_repr[(schema["service_name"], slot["name"])] = slot_str
-    schema_str = SEPARATOR.join(schema_str_parts).lower()
-    return schema_str
+    return SEPARATOR.join(schema_str_parts).lower()
 
   def preprocess_target_utterance(self, turn, schema=None):
     if FLAGS.delexicalize:
@@ -119,8 +117,7 @@ class Preprocessor:
       robot_utterance = self._utterance_gen.get_robot_utterance(turn, schema)
       return turn["speaker"] + SEPARATOR + robot_utterance
     turn_str_parts = [turn["speaker"]]
-    for frame in turn["frames"]:
-      turn_str_parts.append(self.preprocess_frame(frame))
+    turn_str_parts.extend(self.preprocess_frame(frame) for frame in turn["frames"])
     return SEPARATOR.join(turn_str_parts)
 
   def preprocess_frame(self, frame):
@@ -139,11 +136,10 @@ class Preprocessor:
   def preprocess_action(self, action, service):
     """Convert a dialog action into a textual representation."""
     act = action["act"].lower()
-    slot_name = action["slot"]
     values = ",".join(action["values"])
     action_str = act
     action_str_parts = [act]
-    if slot_name:
+    if slot_name := action["slot"]:
       if self.add_slot_desc and (service, slot_name) in self.slots_str_repr:
         action_str_parts.append(self.slots_str_repr[(service, slot_name)])
       else:
@@ -170,7 +166,7 @@ class Preprocessor:
         for turn in turns:
           if turn["speaker"] == "USER":
             continue
-          services = list(set([frame["service"] for frame in turn["frames"]]))
+          services = list({frame["service"] for frame in turn["frames"]})
           if len(services) > 1 and self.input_representation_type != "t2g2":
             raise ValueError("found turn with multiple services. exiting.")
           service = services[0]

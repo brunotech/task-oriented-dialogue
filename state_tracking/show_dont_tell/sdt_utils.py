@@ -72,8 +72,8 @@ def generate_prompt_str(
   """
 
   def _convert_cat_val_prompt_to_mcq(value_str: str,
-                                     cat_val_to_id: MutableMapping[str, str],
-                                     randomize: bool) -> Tuple[str, str]:
+                                       cat_val_to_id: MutableMapping[str, str],
+                                       randomize: bool) -> Tuple[str, str]:
     """Convert categorical value string to MCQ format.
 
     Also updates in place the mapping of MCQ option IDs to values if needed.
@@ -107,7 +107,7 @@ def generate_prompt_str(
     if value in cat_val_to_id:
       value = cat_val_to_id[value]
     elif value != 'dontcare':
-      raise ValueError('Invalid categorical value string: %s' % value_str)
+      raise ValueError(f'Invalid categorical value string: {value_str}')
 
     return value, ' '.join([
         f'{v_id}) {id_to_cat_val[v_id]}'
@@ -118,7 +118,7 @@ def generate_prompt_str(
     return '', [''], None, None
 
   # Validate prompt_indices
-  if prompt_indices and any([not i.isdigit() for i in prompt_indices]):
+  if prompt_indices and any(not i.isdigit() for i in prompt_indices):
     raise ValueError('Please specify prompt_indices as a list of integers, or '
                      'as `None` to use all available prompts. '
                      f'prompt_indices: {prompt_indices}')
@@ -154,15 +154,8 @@ def generate_prompt_str(
   # Create one string for each prompt example
   prompt_substrs = []
   global_ordered_slots = []
-  if mcq_cat_vals:
-    slot_to_cat_val_to_id = collections.defaultdict(dict)
-  else:
-    slot_to_cat_val_to_id = None
-  if mcq_intents:
-    intent_to_id = {}
-  else:
-    intent_to_id = None
-
+  slot_to_cat_val_to_id = collections.defaultdict(dict) if mcq_cat_vals else None
+  intent_to_id = {} if mcq_intents else None
   for prompt in selected_prompts:
     # Fix the slot order for each prompt
     ordered_slots = list(prompt.slots.keys())
@@ -261,7 +254,7 @@ def generate_target_str(dialogue_state: Dict[str, List[str]],
     A formatted target string
   """
   # All slots are presented in the target string
-  if target_format in ['all', 'active']:
+  if target_format in {'all', 'active'}:
     slot_strs = []
     for idx, slot in enumerate(ordered_slots):
       slot_value = dialogue_state.get(slot)  # List[str]
@@ -270,13 +263,11 @@ def generate_target_str(dialogue_state: Dict[str, List[str]],
       if slot_value:
         slot_value = slot_value[0]
 
-      # Inactive slots - for 'all', value is 'none'; for 'active', skip it
-      else:
-        if target_format == 'all':
-          slot_value = 'none'
-        elif target_format == 'active':
-          continue
+      elif target_format == 'active':
+        continue
 
+      elif target_format == 'all':
+        slot_value = 'none'
       slot_identifier = idx if use_slot_ids else slot
       if (slot_to_cat_val_to_id and slot in slot_to_cat_val_to_id and
           slot_value in slot_to_cat_val_to_id[slot]):
@@ -381,9 +372,9 @@ def create_sgdx_prompts(service_to_prompts: Mapping[str, List[Prompt]],
       for slot, value in prompt.slots.items():
         sgdx_slot_name = service_slot_to_name[service][slot]
         sgdx_slots[sgdx_slot_name] = value
-      sgdx_intents = []
-      for intent in prompt.intents:
-        sgdx_intents.append(service_intent_to_name[service][intent])
+      sgdx_intents = [
+          service_intent_to_name[service][intent] for intent in prompt.intents
+      ]
       sgdx_prompts.append(
           Prompt(
               utt=prompt.utt,

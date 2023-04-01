@@ -163,13 +163,9 @@ def load_schema(schema_path: str) -> SchemaInfo:
     slots_by_domain[domain] = {}
     for slot in service['slots']:
       is_categorical = slot['is_categorical']
-      if is_categorical:
-        possible_values = slot['possible_values']
-      else:
-        possible_values = []
-
+      possible_values = slot['possible_values'] if is_categorical else []
       # Don't consider numerical categorical slots as categorical.
-      if is_categorical and all([_.isdigit() for _ in possible_values]):
+      if is_categorical and all(_.isdigit() for _ in possible_values):
         is_categorical = False
         possible_values = []
 
@@ -228,7 +224,7 @@ def extract_belief_state(metadata_json: Json, is_trade: bool) -> Dict[str, str]:
 
 def extract_domains(belief_state: Dict[str, str]) -> Set[str]:
   """Extracts active domains in the dialogue state."""
-  return set([get_domain(slot_name) for slot_name in belief_state.keys()])
+  return {get_domain(slot_name) for slot_name in belief_state}
 
 
 # Dataclass representations of MultiWOZ dialogues.

@@ -145,7 +145,7 @@ def load_schema() -> Tuple[collections.OrderedDict, SchemaInfo]:
 
         # If this is a categorical slot but the possible value are all numeric,
         # consider this as a noncat slot.
-        if is_cat and all([v.isdigit() for v in poss_vals]):
+        if is_cat and all(v.isdigit() for v in poss_vals):
           poss_vals = []
           is_cat = False
 
@@ -191,9 +191,10 @@ def _process_user_turn(state: Dict[str, Any], turn_info: TurnInfo,
     A dictionary that maps slot descriptions to ids.
   """
   slot_values = state['slot_values']
-  domain_slot_values = {}
-  for slot, value in slot_values.items():
-    domain_slot_values[_merge_domain_slot(domain, slot)] = value
+  domain_slot_values = {
+      _merge_domain_slot(domain, slot): value
+      for slot, value in slot_values.items()
+  }
   slot_values = domain_slot_values
 
   # Order of slots is preserved. Meanwhile new values of the same
@@ -277,12 +278,12 @@ def _process_user_turn(state: Dict[str, Any], turn_info: TurnInfo,
 
     # Only consider slots in the utterance domain.
     if domain in intent:
-      active_intent = domain + '-' + state['active_intent']
+      active_intent = f'{domain}-' + state['active_intent']
       # Description prefix to be included in each turn.
       t = f' i{intent_id}{FLAGS.delimiter}'
       intent_str = ''
       if active_intent == intent:
-        intent_str = ' ' + t[:-1]
+        intent_str = f' {t[:-1]}'
 
       state_dict['intent_desc'].append(t + desc.lower() +
                                        ' ' if FLAGS.lowercase else t + desc +
@@ -293,7 +294,7 @@ def _process_user_turn(state: Dict[str, Any], turn_info: TurnInfo,
 
   # Handle requested slots.
   for req_slot in state['requested_slots']:
-    slot_name = domain + '-' + req_slot
+    slot_name = f'{domain}-{req_slot}'
     assert slot_name in desc_to_slot_id, (
         'Requested slots must be in the slot list!')
     req_slot_id = desc_to_slot_id[slot_name]
@@ -319,17 +320,16 @@ def _process_agent_turn(actions: List[Dict[str, Any]], turn_info: TurnInfo,
   acts = {}
   for action in actions:
     act = action['act']
-    slot = action['slot']
     # Note that we don't include api function values but only names, as these
     # values are supposed to be delexicalized and retrieved from db.
     # values = action['values']
     if act not in acts:
       acts[act] = ''
-    if slot:
+    if slot := action['slot']:
       act_slot = _merge_domain_slot(domain, slot)
       if act_slot in desc_to_slot_id:
         slot_id = desc_to_slot_id[act_slot]
-        acts[act] += str(slot_id) + ';'
+        acts[act] += f'{str(slot_id)};'
     else:
       acts[act] += 'none;'
 
@@ -422,10 +422,6 @@ def write_examples(turn_list: List[TurnInfo], out_file: tf.io.gfile.GFile) -> No
     out_file: A GFile object for file output.
   """
   for turn_info in turn_list:
-    # Write samples to file. Each example is divided into two parts
-    # separated by \t, the first part being inputs to the model, and the
-    # second part are labels for prediction.
-    src = turn_info.out_ctx_with_desc_str
     tgt = ''
 
     if FLAGS.level == 'dst':
@@ -447,6 +443,10 @@ def write_examples(turn_list: List[TurnInfo], out_file: tf.io.gfile.GFile) -> No
         ])
 
     if tgt:
+      # Write samples to file. Each example is divided into two parts
+      # separated by \t, the first part being inputs to the model, and the
+      # second part are labels for prediction.
+      src = turn_info.out_ctx_with_desc_str
       # Add dialogue ID, turn ID and frame ID to the target for later eval.
       # Occasionally some examples include newline in the middle.
       example = (f'{" ".join(src.split())} \t{" ".join(tgt.split())}\t' +
@@ -455,7 +455,7 @@ def write_examples(turn_list: List[TurnInfo], out_file: tf.io.gfile.GFile) -> No
       if FLAGS.lowercase:
         example = example.lower()
       print(example)
-      out_file.write('{}\n'.format(example.strip()))
+      out_file.write(f'{example.strip()}\n')
 
 
 def example_filter(turn_list: List[TurnInfo]):
